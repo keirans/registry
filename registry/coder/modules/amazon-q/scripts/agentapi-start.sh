@@ -34,7 +34,7 @@ function start_agentapi() {
     # use low width to fit in the tasks UI sidebar. height is adjusted so that width x height ~= 80x1000 characters
     # visible in the terminal screen by default.
     agentapi server --term-width 67 --term-height 1190 -- \
-        bash -c "q chat --resume --dangerously-skip-permissions $prompt_subshell" \
+        bash -c "q chat --resume" \
         > "$log_file_path" 2>&1
 }
 
