@@ -364,7 +364,7 @@ resource "coder_script" "amazon_q" {
 
 resource "coder_app" "amazonq_code_web" {
   # use a short slug to mitigate https://github.com/coder/coder/issues/15178
-  slug         = local.claude_code_app_slug
+  slug         = "amazon-q"
   display_name = "Amazon Q Web"
   agent_id     = var.agent_id
   url          = "http://localhost:3284/"
