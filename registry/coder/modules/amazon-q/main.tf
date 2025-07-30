@@ -224,7 +224,7 @@ resource "coder_script" "amazon_q" {
     # WITH  the AgentAPI URL
     if [ "${var.report_tasks}" = "true" ] && [ "${var.install_agentapi}" = "true" ] ; then
       echo "Configuring Amazon Q to report tasks via Coder MCP WITH AgentAPI Configuration..."
-      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q, CODER_MCP_AI_AGENTAPI_URL=http://localhost:3284" --scope global --force
+      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=qapi, CODER_MCP_AI_AGENTAPI_URL=http://localhost:3284" --scope global --force
       echo "Added Coder MCP server to Amazon Q configuration"
     fi
 
@@ -364,8 +364,8 @@ resource "coder_script" "amazon_q" {
 
 resource "coder_app" "amazonq_code_web" {
   # use a short slug to mitigate https://github.com/coder/coder/issues/15178
-  slug         = "amazonq-web"
-  display_name = "Amazon Q Web"
+  slug         = "qapi"
+  display_name = "Q AgentAPI"
   agent_id     = var.agent_id
   url          = "http://localhost:3284/"
   icon         = var.icon
@@ -381,8 +381,8 @@ resource "coder_app" "amazonq_code_web" {
 
 
 resource "coder_app" "amazon_q" {
-  slug         = "amazon-q"
-  display_name = "Amazon Q"
+  slug         = "qcli"
+  display_name = "Q CLI"
   agent_id     = var.agent_id
   command      = <<-EOT
     #!/bin/bash
