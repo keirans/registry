@@ -368,8 +368,7 @@ resource "coder_app" "amazonq_code_web" {
   slug         = "qapi"
   display_name = "Q AgentAPI"
   agent_id     = var.agent_id
-  url          = "http://localhost:3284/"
-  external     = false 
+  url          = "http://localhost:3284/" 
   icon         = var.icon
   order        = var.order
   group        = var.group
