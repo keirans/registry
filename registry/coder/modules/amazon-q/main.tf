@@ -362,6 +362,24 @@ resource "coder_script" "amazon_q" {
   run_on_start = true
 }
 
+resource "coder_app" "amazonq_code_web" {
+  # use a short slug to mitigate https://github.com/coder/coder/issues/15178
+  slug         = local.claude_code_app_slug
+  display_name = "Amazon Q Web"
+  agent_id     = var.agent_id
+  url          = "http://localhost:3284/"
+  icon         = var.icon
+  order        = var.order
+  group        = var.group
+  subdomain    = true
+  healthcheck {
+    url       = "http://localhost:3284/status"
+    interval  = 3
+    threshold = 20
+  }
+}
+
+
 resource "coder_app" "amazon_q" {
   slug         = "amazon-q"
   display_name = "Amazon Q"
