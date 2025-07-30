@@ -113,6 +113,8 @@ variable "system_prompt" {
     - Include specifics about what you're doing.
     - Include clear and actionable steps for the user.
     - Be less than 160 characters in length.
+
+    Your first task is:
   EOT
 }
 
@@ -122,13 +124,28 @@ variable "ai_prompt" {
   default     = "Please help me with my coding tasks. I'll provide specific instructions as needed."
 }
 
+variable "install_agentapi" {
+  type        = bool
+  description = "Whether to install AgentAPI."
+  default     = true
+}
+
+variable "agentapi_version" {
+  type        = string
+  description = "The version of AgentAPI to install."
+  default     = "v0.2.3"
+}
+
 locals {
+  workdir                            = trimsuffix(var.folder, "/")
   encoded_pre_install_script  = var.pre_install_script != null ? base64encode(var.pre_install_script) : ""
   encoded_post_install_script = var.post_install_script != null ? base64encode(var.post_install_script) : ""
+  agentapi_start_script_b64          = base64encode(file("${path.module}/scripts/agentapi-start.sh"))
+  agentapi_wait_for_start_script_b64 = base64encode(file("${path.module}/scripts/agentapi-wait-for-start.sh"))
+  remove_last_session_id_script_b64  = base64encode(file("${path.module}/scripts/remove-last-session-id.js"))
+
   full_prompt                 = <<-EOT
     ${var.system_prompt}
-
-    Your first task is:
 
     ${var.ai_prompt}
   EOT
@@ -194,11 +211,68 @@ resource "coder_script" "amazon_q" {
     cd "$PREV_DIR"
     echo "Extracted auth tarball"
 
-    if [ "${var.report_tasks}" = "true" ]; then
-      echo "Configuring Amazon Q to report tasks via Coder MCP..."
+
+    # If Report tasks is true and Install AgentAPI is false, we need to ensure that the Coder MCP server is configured
+    # without the AgentAPI URL
+    if [ "${var.report_tasks}" = "true" ] && [ "${var.install_agentapi}" = "false" ] ; then
+      echo "Configuring Amazon Q to report tasks via Coder MCP WITHOUT AgentAPI Configuration..."
       q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q" --scope global --force
       echo "Added Coder MCP server to Amazon Q configuration"
     fi
+
+    # If Report tasks is true and Install AgentAPI is true, we need to ensure that the Coder MCP server is configured
+    # WITH  the AgentAPI URL
+    if [ "${var.report_tasks}" = "true" ] && [ "${var.install_agentapi}" = "true" ] ; then
+      echo "Configuring Amazon Q to report tasks via Coder MCP WITH AgentAPI Configuration..."
+      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q, CODER_MCP_AI_AGENTAPI_URL='http://localhost:3284'" --scope global --force
+      echo "Added Coder MCP server to Amazon Q configuration"
+    fi
+
+    # Install AgentAPI if enabled
+    if [ "${var.install_agentapi}" = "true" ]; then
+      echo "Installing AgentAPI..."
+      arch=$(uname -m)
+      if [ "$arch" = "x86_64" ]; then
+        binary_name="agentapi-linux-amd64"
+      elif [ "$arch" = "aarch64" ]; then
+        binary_name="agentapi-linux-arm64"
+      else
+        echo "Error: Unsupported architecture: $arch"
+        exit 1
+      fi
+      curl \
+        --retry 5 \
+        --retry-delay 5 \
+        --fail \
+        --retry-all-errors \
+        -L \
+        -C - \
+        -o agentapi \
+        "https://github.com/coder/agentapi/releases/download/${var.agentapi_version}/$binary_name"
+      chmod +x agentapi
+      sudo mv agentapi /usr/local/bin/agentapi
+    fi
+    if ! command_exists agentapi; then
+      echo "Error: AgentAPI is not installed. Please enable install_agentapi or install it manually."
+      exit 1
+    fi
+
+    # this must be kept in sync with the agentapi-start.sh script
+    module_path="$HOME/.amazonq-module"
+    mkdir -p "$module_path/scripts"
+
+     # save the prompt for the agentapi start command - Adjusted this for our prompt in Amazon Q
+     # not quote sure what this is used for in the CLaude module, but it seems to be required
+    echo -n "${local.full_prompt}" > "$module_path/prompt.txt"
+
+    # We now decode the base64 encoded scripts and save them to the module path
+    echo -n "${local.agentapi_start_script_b64}" | base64 -d > "$module_path/scripts/agentapi-start.sh"
+    echo -n "${local.agentapi_wait_for_start_script_b64}" | base64 -d > "$module_path/scripts/agentapi-wait-for-start.sh"
+    echo -n "${local.remove_last_session_id_script_b64}" | base64 -d > "$module_path/scripts/remove-last-session-id.js"
+    chmod +x "$module_path/scripts/agentapi-start.sh"
+    chmod +x "$module_path/scripts/agentapi-wait-for-start.sh"
+
+
 
     if [ -n "${local.encoded_post_install_script}" ]; then
       echo "Running post-install script..."
@@ -262,7 +336,7 @@ resource "coder_script" "amazon_q" {
 
       screen -U -dmS amazon-q bash -c '
         cd ${var.folder}
-        q chat --trust-all-tools | tee -a "$HOME/.amazon-q.log"
+        q chat --trust-all-tools | tee -a "$HOME/.amazon-q.log
         exec bash
       '
       # Extremely hacky way to send the prompt to the screen session
@@ -277,6 +351,13 @@ resource "coder_script" "amazon_q" {
         exit 1
       fi
     fi
+
+    # When all this is done, lets start the AgentAPI server in a very basic form and see what happens.
+
+    cd "${local.workdir}"
+    nohup "$module_path/scripts/agentapi-start.sh" use_prompt &> "$module_path/agentapi-start.log" &
+    "$module_path/scripts/agentapi-wait-for-start.sh"
+
     EOT
   run_on_start = true
 }
