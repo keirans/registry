@@ -11,7 +11,7 @@ echo "Waiting for agentapi server to start on port 3284..."
 for i in $(seq 1 150); do
     for j in $(seq 1 3); do
         sleep 0.1
-        if curl -fs -o /dev/null "http://localhost:3284/status"; then
+        if curl -fs -o /home/coder/healthcheck-${j}.out "http://localhost:3284/status"; then
             echo "agentapi response received ($j/3)"
         else
             echo "agentapi server not responding ($i/15)"

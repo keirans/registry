@@ -373,11 +373,11 @@ resource "coder_app" "amazonq_code_web" {
   order        = var.order
   group        = var.group
   subdomain    = true
-  # healthcheck {
-  #   url       = "http://localhost:3284/status"
-  #   interval  = 30
-  #   threshold = 20
-  # }
+  healthcheck {
+    url       = "http://localhost:3284/status"
+    interval  = 5
+    threshold = 20
+  }
 }
 
 
