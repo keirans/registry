@@ -115,6 +115,7 @@ variable "system_prompt" {
     - Be less than 160 characters in length.
 
     Your first task is:
+
   EOT
 }
 
@@ -374,7 +375,7 @@ resource "coder_app" "amazonq_code_web" {
   subdomain    = true
   healthcheck {
     url       = "http://localhost:3284/status"
-    interval  = 3
+    interval  = 30
     threshold = 20
   }
 }
