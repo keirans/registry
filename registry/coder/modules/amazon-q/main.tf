@@ -353,9 +353,9 @@ resource "coder_script" "amazon_q" {
     fi
 
     # When all this is done, lets start the AgentAPI server in a very basic form and see what happens.
-
+    # This changes to the working directory and then starts Amazon Q with resume mode enabled
     cd "${local.workdir}"
-    nohup "$module_path/scripts/agentapi-start.sh" use_prompt &> "$module_path/agentapi-start.log" &
+    nohup "$module_path/scripts/agentapi-start.sh" &> "$module_path/agentapi-start.log" &
     "$module_path/scripts/agentapi-wait-for-start.sh"
 
     EOT

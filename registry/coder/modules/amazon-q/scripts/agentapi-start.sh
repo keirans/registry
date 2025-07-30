@@ -19,45 +19,19 @@ if [ -f "$log_file_path" ]; then
     mv "$log_file_path" "$log_file_path"".$(date +%s)"
 fi
 
-# see the remove-last-session-id.js script for details
-# about why we need it
-# avoid exiting if the script fails
-node "$scripts_dir/remove-last-session-id.js" "$(pwd)" || true
-
-# we'll be manually handling errors from this point on
-set +o errexit
-
-function start_agentapi() {
-    local continue_flag="$1"
-    local prompt_subshell='"$(cat /tmp/amazonq-code-prompt)"'
-    
-    # use low width to fit in the tasks UI sidebar. height is adjusted so that width x height ~= 80x1000 characters
-    # visible in the terminal screen by default.
-    agentapi server --term-width 67 --term-height 1190 -- \
-        bash -c "q chat --resume" \
-        > "$log_file_path" 2>&1
-}
-
-echo "Starting AgentAPI..."
-
-# attempt to start Amazon Q with the --continue flag
-start_agentapi --continue
-exit_code=$?
-
-echo "First AgentAPI exit code: $exit_code"
+# use low width to fit in the tasks UI sidebar. height is adjusted so that width x height ~= 80x1000 characters
+# visible in the terminal screen by default.
+echo "Changing to /home/coder directory to start AgentAPI server."
+cd /home/coder # this shouldnt be hard coded.
+echo "Starting AgentAPI server"
+agentapi server --term-width 67 --term-height 1190 -- \
+    bash -c "q chat --resume" \
+    > "$log_file_path" 2>&1
 
 if [ $exit_code -eq 0 ]; then
+    echo "Caught exit code 0, AgentAPI started successfully."
     exit 0
+else
+    echo "Caught exit code $exit_code, AgentAPI failed to start."
 fi
 
-# if there was no conversation to continue, Q exited with an error.
-# start Q without the --continue flag.
-if grep -q "No conversation found to continue" "$log_file_path"; then
-    echo "AgentAPI with --continue flag failed, starting Amazon Q without it."
-    start_agentapi
-    exit_code=$?
-fi
-
-echo "Second AgentAPI exit code: $exit_code"
-
-exit $exit_code
