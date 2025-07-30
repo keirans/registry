@@ -16,7 +16,7 @@ module "amazon-q" {
   version  = "1.1.1"
   agent_id = coder_agent.example.id
   # Required: see below for how to generate
-  experiment_auth_tarball = var.amazon_q_auth_tarball
+  auth_tarball = var.amazon_q_auth_tarball
 }
 ```
 
@@ -28,7 +28,7 @@ module "amazon-q" {
   ```sh
   cd ~/.local/share/amazon-q && tar -c . | zstd | base64 -w 0
   ```
-  Paste the result into the `experiment_auth_tarball` variable.
+  Paste the result into the `auth_tarball` variable.
 - To run in the background, your workspace must have `screen` or `tmux` installed.
 
 <details>
@@ -57,13 +57,13 @@ module "amazon-q" {
 
 **5. Paste into your Terraform variable:**
 
-- Assign the string to the `experiment_auth_tarball` variable in your Terraform configuration, for example:
-  ```tf
-  variable "amazon_q_auth_tarball" {
-    type    = string
-    default = "PASTE_LONG_STRING_HERE"
-  }
-  ```
+  - Assign the string to the `auth_tarball` variable in your Terraform configuration, for example:
+    ```tf
+    variable "amazon_q_auth_tarball" {
+      type    = string
+      default = "PASTE_LONG_STRING_HERE"
+    }
+    ```
 
 **Note:**
 
@@ -80,23 +80,23 @@ module "amazon-q" {
 
 ```tf
 module "amazon-q" {
-  source                  = "registry.coder.com/coder/amazon-q/coder"
-  version                 = "1.1.1"
-  agent_id                = coder_agent.example.id
-  experiment_auth_tarball = var.amazon_q_auth_tarball
-  experiment_use_tmux     = true
+  source       = "registry.coder.com/coder/amazon-q/coder"
+  version      = "1.1.1"
+  agent_id     = coder_agent.example.id
+  auth_tarball = var.amazon_q_auth_tarball
+  use_tmux     = true
 }
 ```
 
-### Enable task reporting (experimental)
+### Enable task reporting
 
 ```tf
 module "amazon-q" {
-  source                  = "registry.coder.com/coder/amazon-q/coder"
-  version                 = "1.1.1"
-  agent_id                = coder_agent.example.id
-  experiment_auth_tarball = var.amazon_q_auth_tarball
-  experiment_report_tasks = true
+  source       = "registry.coder.com/coder/amazon-q/coder"
+  version      = "1.1.1"
+  agent_id     = coder_agent.example.id
+  auth_tarball = var.amazon_q_auth_tarball
+  report_tasks = true
 }
 ```
 
@@ -104,17 +104,17 @@ module "amazon-q" {
 
 ```tf
 module "amazon-q" {
-  source                         = "registry.coder.com/coder/amazon-q/coder"
-  version                        = "1.1.1"
-  agent_id                       = coder_agent.example.id
-  experiment_auth_tarball        = var.amazon_q_auth_tarball
-  experiment_pre_install_script  = "echo Pre-install!"
-  experiment_post_install_script = "echo Post-install!"
+  source              = "registry.coder.com/coder/amazon-q/coder"
+  version             = "1.1.1"
+  agent_id            = coder_agent.example.id
+  auth_tarball        = var.amazon_q_auth_tarball
+  pre_install_script  = "echo Pre-install!"
+  post_install_script = "echo Post-install!"
 }
 ```
 
 ## Notes
 
-- Only one of `experiment_use_screen` or `experiment_use_tmux` can be true at a time.
+- Only one of `use_screen` or `use_tmux` can be true at a time.
 - If neither is set, Amazon Q runs in the foreground.
 - For more details, see the [main.tf](./main.tf) source.

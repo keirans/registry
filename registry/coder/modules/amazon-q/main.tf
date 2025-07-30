@@ -54,37 +54,37 @@ variable "amazon_q_version" {
   default     = "latest"
 }
 
-variable "experiment_use_screen" {
+variable "use_screen" {
   type        = bool
   description = "Whether to use screen for running Amazon Q in the background."
   default     = false
 }
 
-variable "experiment_use_tmux" {
+variable "use_tmux" {
   type        = bool
   description = "Whether to use tmux instead of screen for running Amazon Q in the background."
   default     = false
 }
 
-variable "experiment_report_tasks" {
+variable "report_tasks" {
   type        = bool
   description = "Whether to enable task reporting."
   default     = false
 }
 
-variable "experiment_pre_install_script" {
+variable "pre_install_script" {
   type        = string
   description = "Custom script to run before installing Amazon Q."
   default     = null
 }
 
-variable "experiment_post_install_script" {
+variable "post_install_script" {
   type        = string
   description = "Custom script to run after installing Amazon Q."
   default     = null
 }
 
-variable "experiment_auth_tarball" {
+variable "auth_tarball" {
   type        = string
   description = "Base64 encoded, zstd compressed tarball of a pre-authenticated ~/.local/share/amazon-q directory. After running `q login` on another machine, you may generate it with: `cd ~/.local/share/amazon-q && tar -c . | zstd | base64 -w 0`"
   default     = "tarball"
@@ -123,26 +123,9 @@ variable "ai_prompt" {
 }
 
 locals {
-  encoded_pre_install_script  = var.experiment_pre_install_script != null ? base64encode(var.experiment_pre_install_script) : ""
-  encoded_post_install_script = var.experiment_post_install_script != null ? base64encode(var.experiment_post_install_script) : ""
-  # We need to use allowed tools to limit the context Amazon Q receives.
-  # Amazon Q can't handle big contexts, and the `create_template_version` tool
-  # has a description that's too long.
-  mcp_json         = <<EOT
-    {
-      "mcpServers": {
-        "coder": {
-          "command": "coder",
-          "args": ["exp", "mcp", "server", "--allowed-tools", "coder_report_task"],
-          "env": {
-            "CODER_MCP_APP_STATUS_SLUG": "amazon-q"
-          }
-        }
-      }
-    }
-  EOT
-  encoded_mcp_json = base64encode(local.mcp_json)
-  full_prompt      = <<-EOT
+  encoded_pre_install_script  = var.pre_install_script != null ? base64encode(var.pre_install_script) : ""
+  encoded_post_install_script = var.post_install_script != null ? base64encode(var.post_install_script) : ""
+  full_prompt                 = <<-EOT
     ${var.system_prompt}
 
     Your first task is:
@@ -202,7 +185,7 @@ resource "coder_script" "amazon_q" {
 
     echo "Extracting auth tarball..."
     PREV_DIR="$PWD"
-    echo "${var.experiment_auth_tarball}" | base64 -d > /tmp/auth.tar.zst
+    echo "${var.auth_tarball}" | base64 -d > /tmp/auth.tar.zst
     rm -rf ~/.local/share/amazon-q
     mkdir -p ~/.local/share/amazon-q
     cd ~/.local/share/amazon-q
@@ -211,6 +194,12 @@ resource "coder_script" "amazon_q" {
     cd "$PREV_DIR"
     echo "Extracted auth tarball"
 
+    if [ "${var.report_tasks}" = "true" ]; then
+      echo "Configuring Amazon Q to report tasks via Coder MCP..."
+      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q" --scope global --force
+      echo "Added Coder MCP server to Amazon Q configuration"
+    fi
+
     if [ -n "${local.encoded_post_install_script}" ]; then
       echo "Running post-install script..."
       echo "${local.encoded_post_install_script}" | base64 -d > /tmp/post_install.sh
@@ -218,20 +207,13 @@ resource "coder_script" "amazon_q" {
       /tmp/post_install.sh
     fi
 
-    if [ "${var.experiment_report_tasks}" = "true" ]; then
-      echo "Configuring Amazon Q to report tasks via Coder MCP..."
-      mkdir -p ~/.aws/amazonq
-      echo "${local.encoded_mcp_json}" | base64 -d > ~/.aws/amazonq/mcp.json
-      echo "Created the ~/.aws/amazonq/mcp.json configuration file"
-    fi
-
-    if [ "${var.experiment_use_tmux}" = "true" ] && [ "${var.experiment_use_screen}" = "true" ]; then
-      echo "Error: Both experiment_use_tmux and experiment_use_screen cannot be true simultaneously."
+    if [ "${var.use_tmux}" = "true" ] && [ "${var.use_screen}" = "true" ]; then
+      echo "Error: Both use_tmux and use_screen cannot be true simultaneously."
       echo "Please set only one of them to true."
       exit 1
     fi
 
-    if [ "${var.experiment_use_tmux}" = "true" ]; then
+    if [ "${var.use_tmux}" = "true" ]; then
       echo "Running Amazon Q in the background with tmux..."
 
       if ! command_exists tmux; then
@@ -251,7 +233,7 @@ resource "coder_script" "amazon_q" {
       tmux send-keys -t amazon-q Enter
     fi
 
-    if [ "${var.experiment_use_screen}" = "true" ]; then
+    if [ "${var.use_screen}" = "true" ]; then
       echo "Running Amazon Q in the background..."
 
       if ! command_exists screen; then
@@ -280,7 +262,7 @@ resource "coder_script" "amazon_q" {
 
       screen -U -dmS amazon-q bash -c '
         cd ${var.folder}
-        q chat --trust-all-tools | tee -a "$HOME/.amazon-q.log
+        q chat --trust-all-tools | tee -a "$HOME/.amazon-q.log"
         exec bash
       '
       # Extremely hacky way to send the prompt to the screen session
@@ -310,7 +292,7 @@ resource "coder_app" "amazon_q" {
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
 
-    if [ "${var.experiment_use_tmux}" = "true" ]; then
+    if [ "${var.use_tmux}" = "true" ]; then
       if tmux has-session -t amazon-q 2>/dev/null; then
         echo "Attaching to existing Amazon Q tmux session." | tee -a "$HOME/.amazon-q.log"
         tmux attach-session -t amazon-q
@@ -318,7 +300,7 @@ resource "coder_app" "amazon_q" {
         echo "Starting a new Amazon Q tmux session." | tee -a "$HOME/.amazon-q.log"
         tmux new-session -s amazon-q -c ${var.folder} "q chat --trust-all-tools | tee -a \"$HOME/.amazon-q.log\"; exec bash"
       fi
-    elif [ "${var.experiment_use_screen}" = "true" ]; then
+    elif [ "${var.use_screen}" = "true" ]; then
       if screen -list | grep -q "amazon-q"; then
         echo "Attaching to existing Amazon Q screen session." | tee -a "$HOME/.amazon-q.log"
         screen -xRR amazon-q
