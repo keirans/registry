@@ -369,10 +369,11 @@ resource "coder_app" "amazonq_code_web" {
   display_name = "Q AgentAPI"
   agent_id     = var.agent_id
   url          = "http://localhost:3284/"
+  external     = false 
   icon         = var.icon
   order        = var.order
   group        = var.group
-  subdomain    = true
+  subdomain    = false
   healthcheck {
     url       = "http://localhost:3284/status"
     interval  = 5
