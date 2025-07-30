@@ -25,7 +25,7 @@ echo "Changing to /home/coder directory to start AgentAPI server."
 cd /home/coder # this shouldnt be hard coded.
 echo "Starting AgentAPI server"
 agentapi server --term-width 67 --term-height 1190 -- \
-    bash -c "q chat --resume" \
+    bash -c "q chat --resume --trust-all-tools" \
     > "$log_file_path" 2>&1
 
 if [ $exit_code -eq 0 ]; then
