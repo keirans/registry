@@ -262,17 +262,12 @@ resource "coder_script" "amazon_q" {
     module_path="$HOME/.amazonq-module"
     mkdir -p "$module_path/scripts"
 
-     # save the prompt for the agentapi start command - Adjusted this for our prompt in Amazon Q
-     # not quote sure what this is used for in the CLaude module, but it seems to be required
-    echo -n "${local.full_prompt}" > "$module_path/prompt.txt"
-
     # We now decode the base64 encoded scripts and save them to the module path
     echo -n "${local.agentapi_start_script_b64}" | base64 -d > "$module_path/scripts/agentapi-start.sh"
     echo -n "${local.agentapi_wait_for_start_script_b64}" | base64 -d > "$module_path/scripts/agentapi-wait-for-start.sh"
     echo -n "${local.remove_last_session_id_script_b64}" | base64 -d > "$module_path/scripts/remove-last-session-id.js"
     chmod +x "$module_path/scripts/agentapi-start.sh"
     chmod +x "$module_path/scripts/agentapi-wait-for-start.sh"
-
 
 
     if [ -n "${local.encoded_post_install_script}" ]; then

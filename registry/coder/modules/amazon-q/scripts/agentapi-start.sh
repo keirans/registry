@@ -7,13 +7,6 @@ module_path="$HOME/.amazonq-module"
 scripts_dir="$module_path/scripts"
 log_file_path="$module_path/agentapi.log"
 
-# if the first argument is not empty, start Amazon Q with the prompt
-if [ -n "$1" ]; then
-    cp "$module_path/prompt.txt" /tmp/amazonq-code-prompt
-else
-    rm -f /tmp/amazonq-code-prompt
-fi
-
 # if the log file already exists, archive it
 if [ -f "$log_file_path" ]; then
     mv "$log_file_path" "$log_file_path"".$(date +%s)"
@@ -22,7 +15,7 @@ fi
 # use low width to fit in the tasks UI sidebar. height is adjusted so that width x height ~= 80x1000 characters
 # visible in the terminal screen by default.
 echo "Changing to /home/coder directory to start AgentAPI server."
-cd /home/coder # this shouldnt be hard coded.
+cd /home/coder # TODO: this shouldnt be hard coded - fix before release
 echo "Starting AgentAPI server"
 agentapi server --term-width 67 --term-height 1190 -- \
     bash -c "q chat --resume --trust-all-tools" \
