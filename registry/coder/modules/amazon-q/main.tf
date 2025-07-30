@@ -224,7 +224,7 @@ resource "coder_script" "amazon_q" {
     # WITH  the AgentAPI URL
     if [ "${var.report_tasks}" = "true" ] && [ "${var.install_agentapi}" = "true" ] ; then
       echo "Configuring Amazon Q to report tasks via Coder MCP WITH AgentAPI Configuration..."
-      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q, CODER_MCP_AI_AGENTAPI_URL='http://localhost:3284'" --scope global --force
+      q mcp add --name coder --command "coder" --args "exp,mcp,server,--allowed-tools,coder_report_task" --env "CODER_MCP_APP_STATUS_SLUG=amazon-q, CODER_MCP_AI_AGENTAPI_URL=\"http://localhost:3284\"" --scope global --force
       echo "Added Coder MCP server to Amazon Q configuration"
     fi
 
