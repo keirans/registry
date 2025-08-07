@@ -51,7 +51,7 @@ variable "install_amazon_q" {
 variable "amazon_q_version" {
   type        = string
   description = "The version of Amazon Q to install."
-  default     = "latest"
+  default     = "1.13.1"
 }
 
 variable "use_screen" {
@@ -219,6 +219,21 @@ resource "coder_script" "amazon_q" {
     cd "$PREV_DIR"
     echo "Extracted auth tarball"
 
+    # Ensuring the Amazon Q Environment is sane given new 'features' in the recently releases.
+    # Installing SSH Server
+    sudo apt-get update 
+    sudo apt-get install -y openssh-server
+
+    The following values need to be in the SSH Configuration
+    echo "AcceptEnv Q_SET_PARENT" | sudo tee -a  /etc/ssh/sshd_config.d/amazonq.conf
+    echo "AllowStreamLocalForwarding yes" | sudo tee -a /etc/ssh/sshd_config.d/amazonq.conf
+
+    # QTerm must be running for some reason
+    qterm
+
+    # Ensure the shell directory exists (TODO - Remove hard coded values)
+    mkdir -p /home/coder/.local/share/amazon-q
+    chmod -R 755 /home/coder/.local/share/amazon-q
 
     # If Report tasks is true and Install AgentAPI is false, we need to ensure that the Coder MCP server is configured
     # without the AgentAPI URL
