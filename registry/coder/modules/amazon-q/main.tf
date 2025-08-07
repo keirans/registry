@@ -224,7 +224,7 @@ resource "coder_script" "amazon_q" {
     sudo apt-get update 
     sudo apt-get install -y openssh-server
 
-    The following values need to be in the SSH Configuration
+    #The following values need to be in the SSH Configuration
     echo "AcceptEnv Q_SET_PARENT" | sudo tee -a  /etc/ssh/sshd_config.d/amazonq.conf
     echo "AllowStreamLocalForwarding yes" | sudo tee -a /etc/ssh/sshd_config.d/amazonq.conf
 
