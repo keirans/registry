@@ -232,7 +232,7 @@ resource "coder_script" "amazon_q" {
     #qterm
 
     # Ensure the shell directory exists (TODO - Remove hard coded values)
-    mkdir -p /home/coder/.local/share/amazon-q
+    mkdir -p /home/coder/.local/share/amazon-q/shell
     chmod -R 755 /home/coder/.local/share/amazon-q
 
     # If Report tasks is true and Install AgentAPI is false, we need to ensure that the Coder MCP server is configured
