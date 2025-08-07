@@ -229,7 +229,7 @@ resource "coder_script" "amazon_q" {
     echo "AllowStreamLocalForwarding yes" | sudo tee -a /etc/ssh/sshd_config.d/amazonq.conf
 
     # QTerm must be running for some reason
-    qterm
+    #qterm
 
     # Ensure the shell directory exists (TODO - Remove hard coded values)
     mkdir -p /home/coder/.local/share/amazon-q
