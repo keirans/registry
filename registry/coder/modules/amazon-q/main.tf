@@ -150,7 +150,7 @@ locals {
   agentapi_start_script_b64          = base64encode(file("${path.module}/scripts/agentapi-start.sh"))
   agentapi_wait_for_start_script_b64 = base64encode(file("${path.module}/scripts/agentapi-wait-for-start.sh"))
   remove_last_session_id_script_b64  = base64encode(file("${path.module}/scripts/remove-last-session-id.js"))
-  agentapi_chat_base_path            = var.agentapi_subdomain ? "" : "/@${data.coder_workspace_owner.me.name}/${data.coder_workspace.me.name}.${var.agent_id}/apps/${var.web_app_slug}/chat"
+  agentapi_chat_base_path            = var.agentapi_subdomain ? "" : "/@${data.coder_workspace_owner.me.name}/${data.coder_workspace.me.name}.${var.agent_id}/apps/qapi/chat"
 
   full_prompt = <<-EOT
     ${var.system_prompt}
