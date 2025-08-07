@@ -237,6 +237,8 @@ resource "coder_script" "amazon_q" {
 
     # Install integrations
     q integrations install dotfiles
+    # https://github.com/aws/q-command-line-discussions/discussions/234
+    export Q_PARENT="q chat" 
 
     # If Report tasks is true and Install AgentAPI is false, we need to ensure that the Coder MCP server is configured
     # without the AgentAPI URL
