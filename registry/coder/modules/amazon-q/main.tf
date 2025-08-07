@@ -225,8 +225,8 @@ resource "coder_script" "amazon_q" {
     sudo apt-get install -y openssh-server
 
     #The following values need to be in the SSH Configuration
-    echo "AcceptEnv Q_SET_PARENT" | sudo tee -a  /etc/ssh/sshd_config.d/amazonq.conf
-    echo "AllowStreamLocalForwarding yes" | sudo tee -a /etc/ssh/sshd_config.d/amazonq.conf
+    echo "AcceptEnv Q_SET_PARENT" | sudo tee -a  /etc/ssh/sshd_config
+    echo "AllowStreamLocalForwarding yes" | sudo tee -a /etc/ssh/sshd_config
 
     # QTerm must be running for some reason
     #qterm
@@ -234,6 +234,9 @@ resource "coder_script" "amazon_q" {
     # Ensure the shell directory exists (TODO - Remove hard coded values)
     mkdir -p /home/coder/.local/share/amazon-q/shell
     chmod -R 755 /home/coder/.local/share/amazon-q
+
+    # Install integrations
+    q integrations install dotfiles
 
     # If Report tasks is true and Install AgentAPI is false, we need to ensure that the Coder MCP server is configured
     # without the AgentAPI URL
