@@ -134,18 +134,25 @@ variable "install_agentapi" {
 variable "agentapi_version" {
   type        = string
   description = "The version of AgentAPI to install."
-  default     = "v0.3.0"
+  default     = "v0.3.3"
+}
+
+variable "agentapi_subdomain" {
+  type        = bool
+  description = "Whether to use a subdomain for AgentAPI."
+  default     = true
 }
 
 locals {
   workdir                            = trimsuffix(var.folder, "/")
-  encoded_pre_install_script  = var.pre_install_script != null ? base64encode(var.pre_install_script) : ""
-  encoded_post_install_script = var.post_install_script != null ? base64encode(var.post_install_script) : ""
+  encoded_pre_install_script         = var.pre_install_script != null ? base64encode(var.pre_install_script) : ""
+  encoded_post_install_script        = var.post_install_script != null ? base64encode(var.post_install_script) : ""
   agentapi_start_script_b64          = base64encode(file("${path.module}/scripts/agentapi-start.sh"))
   agentapi_wait_for_start_script_b64 = base64encode(file("${path.module}/scripts/agentapi-wait-for-start.sh"))
   remove_last_session_id_script_b64  = base64encode(file("${path.module}/scripts/remove-last-session-id.js"))
+  agentapi_chat_base_path            = var.agentapi_subdomain ? "" : "/@${data.coder_workspace_owner.me.name}/${data.coder_workspace.me.name}.${var.agent_id}/apps/${var.web_app_slug}/chat"
 
-  full_prompt                 = <<-EOT
+  full_prompt = <<-EOT
     ${var.system_prompt}
 
     ${var.ai_prompt}
@@ -351,6 +358,7 @@ resource "coder_script" "amazon_q" {
     # When all this is done, lets start the AgentAPI server in a very basic form and see what happens.
     # This changes to the working directory and then starts Amazon Q with resume mode enabled
     cd "${local.workdir}"
+    export ARG_AGENTAPI_CHAT_BASE_PATH='${local.agentapi_chat_base_path}'
     nohup "$module_path/scripts/agentapi-start.sh" &> "$module_path/agentapi-start.log" &
     "$module_path/scripts/agentapi-wait-for-start.sh"
 
@@ -363,7 +371,7 @@ resource "coder_app" "amazonq_code_web" {
   slug         = "qapi"
   display_name = "Q AgentAPI"
   agent_id     = var.agent_id
-  url          = "http://localhost:3284/" 
+  url          = "http://localhost:3284/"
   icon         = var.icon
   order        = var.order
   group        = var.group

@@ -17,6 +17,9 @@ fi
 echo "Changing to /home/coder directory to start AgentAPI server."
 cd /home/coder # TODO: this shouldnt be hard coded - fix before release
 echo "Starting AgentAPI server"
+
+AGENTAPI_CHAT_BASE_PATH="${AGENTAPI_CHAT_BASE_PATH:-}"
+echo "Using AGENTAPI_CHAT_BASE_PATH: $AGENTAPI_CHAT_BASE_PATH"
 agentapi server --term-width 67 --term-height 1190 -- \
     bash -c "q chat --resume --trust-all-tools" \
     > "$log_file_path" 2>&1
